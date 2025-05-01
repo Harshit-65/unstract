@@ -2,7 +2,17 @@ version: '3.7'
 
 services:
   mariadb:
+    tmpfs:
+      - /tmp
+      - /var/tmp
+      - /run
+    read_only: true
     image: 'mariadb:11.2.4'
+    tmpfs:
+      - /tmp
+      - /var/tmp
+      - /run
+    read_only: true
     container_name: unstract-mariadb
     ports:
       - "3306:3306"
