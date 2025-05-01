@@ -24,11 +24,3 @@ WORKDIR /app/src
 
 
 ENTRYPOINT ["opentelemetry-instrument", "python", "main.py"]
-# Create a non-root user and set proper permissions
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-# Set permissions for application files
-RUN chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
