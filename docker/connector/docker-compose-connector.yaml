@@ -13,13 +13,21 @@ services:
 
   mysql:
     image: 'mysql:9.0.1'
+    read_only: true
     container_name: unstract-mysql
+    read_only: true
     env_file:
+    read_only: true
       - .env
+    read_only: true
     ports:
+    read_only: true
       - "3307:3306"
+    read_only: true
     volumes:
+    read_only: true
       - mysql_data:/var/lib/mysql
+    read_only: true
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-preview-ubuntu-22.04
