@@ -1,38 +1,45 @@
+import importlib
 import logging
-import os
-from importlib import import_module
-from typing import Any
+from typing import Dict, Type
 
-from unstract.connectors.constants import Common
-from unstract.connectors.queues.unstract_queue import UnstractQueue
+from unstract.connectors.queues.allowed_modules import is_allowed_module
+from unstract.connectors.queues.base import QueueBase
 
 logger = logging.getLogger(__name__)
 
 
-def register_connectors(connectors: dict[str, Any]) -> None:
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    package = "unstract.connectors.queues"
+class QueueRegister:
+    """Register for queue implementations."""
 
-    for connector in os.listdir(current_directory):
-        connector_path = os.path.join(current_directory, connector)
-        # Check if the item is a directory and not a special directory like __pycache__
-        if os.path.isdir(connector_path) and not connector.startswith("__"):
+    _registry: Dict[str, Type[QueueBase]] = {}
+
+    @classmethod
+    def register(cls, name: str, queue_class: Type[QueueBase]) -> None:
+        """Register a queue implementation."""
+        cls._registry[name] = queue_class
+
+    @classmethod
+    def get(cls, name: str) -> Type[QueueBase]:
+        """Get a queue implementation."""
+        if name not in cls._registry:
+            # Validate module name against whitelist before importing
+            module_name = f"unstract.connectors.queues.{name}"
+            if not is_allowed_module(module_name):
+                raise ValueError(f"Module {module_name} is not in the allowed modules list")
+            
             try:
-                full_module_path = f"{package}.{connector}"
-                module = import_module(full_module_path)
-                metadata = getattr(module, "metadata", {})
-                if metadata.get("is_active", False):
-                    connector_class: UnstractQueue = metadata[Common.CONNECTOR]
-                    connector_id = connector_class.get_id()
-                    if not connector_id or (connector_id in connectors):
-                        logger.warning(f"Duplicate Id : {connector_id}")
-                    else:
-                        connectors[connector_id] = {
-                            Common.MODULE: module,
-                            Common.METADATA: metadata,
-                        }
-            except ModuleNotFoundError as exception:
-                logger.error(f"Error while importing connectors : {exception}")
+                module = importlib.import_module(module_name)
+                for attr_name in dir(module):
+                    attr = getattr(module, attr_name)
+                    if (
+                        isinstance(attr, type)
+                        and issubclass(attr, QueueBase)
+                        and attr is not QueueBase
+                    ):
+                        cls.register(name, attr)
+                        break
+            except (ImportError, AttributeError) as e:
+                logger.error(f"Failed to import queue implementation {name}: {e}")
+                raise ValueError(f"Queue implementation {name} not found") from e
 
-    if len(connectors) == 0:
-        logger.warning("No connector found.")
+        return cls._registry[name]
