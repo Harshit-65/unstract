@@ -23,13 +23,21 @@ services:
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-preview-ubuntu-22.04
+    read_only: true
     container_name: unstract-mssql
+    read_only: true
     env_file:
+    read_only: true
       - .env
+    read_only: true
     ports:
+    read_only: true
       - "1433:1433"
+    read_only: true
     volumes:
+    read_only: true
       - mssql_data:/var/opt/mssql
+    read_only: true
 
   sftp:
     image: atmoz/sftp:debian
