@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.db.backends.postgresql.base import (
+from sqlalchemy import text
     DatabaseWrapper as PostgresDatabaseWrapper,
 )
 
@@ -45,7 +46,7 @@ class DatabaseWrapper(PostgresDatabaseWrapper):
                 f"{conn_id}."
             )
             with connection.cursor() as cursor:
-                cursor.execute(f"SET search_path TO {settings.DB_SCHEMA}")
+                cursor.execute(text("SET search_path TO :settings.DB_SCHEMA"), {settings.DB_SCHEMA: settings.DB_SCHEMA}))
             logger.debug(f"Successfully set search_path for DB connection ID {conn_id}.")
         finally:
             connection.autocommit = original_autocommit
